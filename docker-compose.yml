@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  budgie_db:
+    container_name: budgie_db
+    image: postgres:14
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: budgie
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+
+volumes:
+  postgres-data: null
