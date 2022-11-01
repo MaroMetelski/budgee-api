@@ -89,7 +89,7 @@ def entry(entry_id):
     if request.method == "DELETE":
         deleted = backend.delete_entry(entry_id)
         if not deleted:
-            return "", 404
+            abort(404)
 
     return ""
 
