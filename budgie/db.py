@@ -94,7 +94,7 @@ class Database:
             user = session.query(UserModel).filter_by(email=email).first()
             self.current_uid = user.id
 
-    def create_account(self, session, account):
+    def create_account(self, account):
         with sessionmaker(self.db).begin() as session:
             acc = AccountModel(
                 user_id=self.current_uid,
