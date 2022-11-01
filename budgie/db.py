@@ -178,6 +178,21 @@ class Database:
 
             session.add(entry_m)
 
+    def delete_entry(self, entry_id):
+        with sessionmaker(self.db).begin() as session:
+            entry = session.query(EntryModel).filter_by(
+                user_id=self.current_uid,
+                id=entry_id
+            ).first()
+            if not entry:
+                return False
+
+            # TODO: this could be improved with cascade
+            for entry_tag in entry.tags:
+                session.delete(entry_tag)
+            session.delete(entry)
+            return True
+
     def list_entries(self, **kwargs):
         """
         List entries from database

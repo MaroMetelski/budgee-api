@@ -62,7 +62,7 @@ def account():
 
 @app.route("/entry", methods=["GET", "POST"])
 @auth_required
-def entry():
+def entries():
     args = request.args.to_dict()
     if request.method == "GET":
         return EntrySchema(many=True).dumps(backend.list_entries(**args))
@@ -70,6 +70,17 @@ def entry():
         entry = EntrySchema().load(request.get_json())
         backend.add_entry(entry)
         return EntrySchema().dumps(entry)
+
+
+@app.route("/entry/<int:entry_id>", methods=["DELETE"])
+@auth_required
+def entry(entry_id):
+    if request.method == "DELETE":
+        deleted = backend.delete_entry(entry_id)
+        if not deleted:
+            return "", 404
+
+    return ""
 
 
 @app.route("/auth/register", methods=["POST"])
