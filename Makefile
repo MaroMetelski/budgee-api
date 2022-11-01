@@ -1,2 +1,2 @@
-include database.mk
-include server.mk
+include makefiles/database.mk
+include makefiles/server.mk
