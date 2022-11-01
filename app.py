@@ -32,6 +32,13 @@ DB_STRING = (
 backend = Database(DB_STRING)
 
 
+def json_response(content):
+    return app.response_class(
+        response=content,
+        mimetype="application/json"
+    )
+
+
 def auth_required(route):
     @wraps(route)
     def wrapper(*args, **kwargs):
@@ -53,11 +60,11 @@ def index():
 @auth_required
 def account():
     if request.method == "GET":
-        return AccountSchema(many=True).dumps(backend.list_accounts())
+        return json_response(AccountSchema(many=True).dumps(backend.list_accounts()))
     if request.method == "POST":
         acc = AccountSchema().load(request.get_json())
         backend.create_account(acc)
-        return AccountSchema().dumps(acc)
+        return json_response(AccountSchema().dumps(acc))
 
 
 @app.route("/entry", methods=["GET", "POST"])
@@ -65,11 +72,12 @@ def account():
 def entries():
     args = request.args.to_dict()
     if request.method == "GET":
-        return EntrySchema(many=True).dumps(backend.list_entries(**args))
+        entries = EntrySchema(many=True).dumps(backend.list_entries(**args))
+        return json_response(entries)
     if request.method == "POST":
         entry = EntrySchema().load(request.get_json())
         backend.add_entry(entry)
-        return EntrySchema().dumps(entry)
+        return json_response(EntrySchema().dumps(entry))
 
 
 @app.route("/entry/<int:entry_id>", methods=["DELETE"])
@@ -108,4 +116,4 @@ def login():
     token = jwt.encode(
         {"user_id": user["email"], "exp": expiry_time}, secret, algorithm="HS256"
     )
-    return json.dumps({"token": token})
+    return json_response(json.dumps({"token": token}))
