@@ -43,7 +43,10 @@ def auth_required(route):
     @wraps(route)
     def wrapper(*args, **kwargs):
         token = request.headers.get("Authorization").split()[1]
-        token = jwt.decode(token, secret, algorithms=["HS256"])
+        try:
+            token = jwt.decode(token, secret, algorithms=["HS256"])
+        except jwt.InvalidSignatureError:
+            abort(401)
         email = token["user_id"]
         backend.set_current_user(email)
         return route(*args, **kwargs)
