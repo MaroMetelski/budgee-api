@@ -67,6 +67,14 @@ def account():
         return json_response(AccountSchema().dumps(acc))
 
 
+@app.route("/account/balance/<string:account>", methods=["GET"])
+@auth_required
+def account_balance(account):
+    if request.method == "GET":
+        balance = backend.get_account_balance(account)
+        return {"balance": balance}
+
+
 @app.route("/entry", methods=["GET", "POST"])
 @auth_required
 def entries():
