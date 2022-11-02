@@ -33,10 +33,7 @@ backend = Database(DB_STRING)
 
 
 def json_response(content):
-    return app.response_class(
-        response=content,
-        mimetype="application/json"
-    )
+    return app.response_class(response=content, mimetype="application/json")
 
 
 def auth_required(route):

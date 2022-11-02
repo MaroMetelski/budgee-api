@@ -180,10 +180,11 @@ class Database:
 
     def delete_entry(self, entry_id):
         with sessionmaker(self.db).begin() as session:
-            entry = session.query(EntryModel).filter_by(
-                user_id=self.current_uid,
-                id=entry_id
-            ).first()
+            entry = (
+                session.query(EntryModel)
+                .filter_by(user_id=self.current_uid, id=entry_id)
+                .first()
+            )
             if not entry:
                 return False
 
