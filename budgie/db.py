@@ -138,6 +138,7 @@ class Database:
 
             return UserSchema().load(
                 {
+                    "id": user.id,
                     "name": user.name,
                     "email": user.email,
                     "password": user.password,
@@ -255,6 +256,7 @@ class Database:
                 acc_list.append(
                     AccountSchema().load(
                         {
+                            "id": account.id,
                             "name": account.name,
                             "description": account.description,
                             "type": account.type,

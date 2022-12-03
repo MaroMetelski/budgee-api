@@ -5,6 +5,7 @@ ACCOUNT_TYPES = ("expense", "income", "equity", "asset", "liability")
 
 
 class UserSchema(Schema):
+    id = fields.UUID()
     name = fields.Str(required=True)
     email = fields.Str(required=True)
     password = fields.Str(required=True)
