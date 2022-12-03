@@ -8,8 +8,11 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.sql import func
+import uuid
 
 from .schemas import AccountSchema, EntrySchema, UserSchema
 
@@ -18,7 +21,7 @@ base = declarative_base()
 
 class UserModel(base):
     __tablename__ = "app_user"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True)
     password = Column(String)
     salt = Column(String)
@@ -28,8 +31,8 @@ class UserModel(base):
 
 class AccountModel(base):
     __tablename__ = "account"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("app_user.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("app_user.id"))
     name = Column(String)
     description = Column(String)
     type = Column(String)
@@ -46,35 +49,35 @@ class EntryTagModel(base):
     """Association table for entry tags"""
 
     __tablename__ = "entry_tag"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("app_user.id"))
-    entry_id = Column(Integer, ForeignKey("entry.id"))
-    tag_id = Column(Integer, ForeignKey("tag.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("app_user.id"))
+    entry_id = Column(UUID(as_uuid=True), ForeignKey("entry.id"))
+    tag_id = Column(UUID(as_uuid=True), ForeignKey("tag.id"))
     entry = relationship("EntryModel", back_populates="tags")
     tag = relationship("TagModel", back_populates="entries")
 
 
 class TagModel(base):
     __tablename__ = "tag"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("app_user.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("app_user.id"))
     tag = Column(String)
     entries = relationship("EntryTagModel", back_populates="tag")
 
 
 class EntryModel(base):
     __tablename__ = "entry"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("app_user.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("app_user.id"))
     who = Column(String)
     when = Column(Date)
-    credit_account_id = Column(Integer, ForeignKey(AccountModel.id))
+    credit_account_id = Column(UUID(as_uuid=True), ForeignKey(AccountModel.id))
     credit_account = relationship(
         "AccountModel",
         back_populates="credit_entries",
         foreign_keys=[credit_account_id],
     )
-    debit_account_id = Column(Integer, ForeignKey(AccountModel.id))
+    debit_account_id = Column(UUID(as_uuid=True), ForeignKey(AccountModel.id))
     debit_account = relationship(
         "AccountModel", back_populates="debit_entries", foreign_keys=[debit_account_id]
     )
@@ -94,7 +97,7 @@ class Database:
             user = session.query(UserModel).filter_by(email=email).first()
             self.current_uid = user.id
 
-    def create_account(self, session, account):
+    def create_account(self, account):
         with sessionmaker(self.db).begin() as session:
             acc = AccountModel(
                 user_id=self.current_uid,
@@ -135,6 +138,7 @@ class Database:
 
             return UserSchema().load(
                 {
+                    "id": user.id,
                     "name": user.name,
                     "email": user.email,
                     "password": user.password,
@@ -177,6 +181,22 @@ class Database:
                     entry_m.tags.append(entry_tag)
 
             session.add(entry_m)
+
+    def delete_entry(self, entry_id):
+        with sessionmaker(self.db).begin() as session:
+            entry = (
+                session.query(EntryModel)
+                .filter_by(user_id=self.current_uid, id=entry_id)
+                .first()
+            )
+            if not entry:
+                return False
+
+            # TODO: this could be improved with cascade
+            for entry_tag in entry.tags:
+                session.delete(entry_tag)
+            session.delete(entry)
+            return True
 
     def list_entries(self, **kwargs):
         """
@@ -236,6 +256,7 @@ class Database:
                 acc_list.append(
                     AccountSchema().load(
                         {
+                            "id": account.id,
                             "name": account.name,
                             "description": account.description,
                             "type": account.type,
@@ -243,3 +264,22 @@ class Database:
                     )
                 )
             return acc_list
+
+    def get_account_balance(self, account):
+        with sessionmaker(self.db).begin() as session:
+            sum_cr = (
+                session.query(func.sum(EntryModel.amount))
+                .filter_by(user_id=self.current_uid)
+                .filter(EntryModel.credit_account.has(name=account))
+                .scalar()
+            )
+            sum_dr = (
+                session.query(func.sum(EntryModel.amount))
+                .filter_by(user_id=self.current_uid)
+                .filter(EntryModel.debit_account.has(name=account))
+                .scalar()
+            )
+            sum_dr = 0 if not sum_dr else sum_dr
+            sum_cr = 0 if not sum_cr else sum_cr
+
+            return sum_dr - sum_cr

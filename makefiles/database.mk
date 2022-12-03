@@ -5,3 +5,5 @@ DOCKER ?= docker
 
 psql:
 	$(DOCKER) exec -it $(DB_CONTAINER) psql -U $(DB_USER) $(DB)
+
+.PHONY: psql
