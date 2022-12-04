@@ -41,7 +41,7 @@ class AccountModel(base):
     debit_entries = relationship(
         "EntryModel", primaryjoin="EntryModel.debit_account_id == AccountModel.id"
     )
-    __table_args__ = (UniqueConstraint("name", "user_id"),)
+    __table_args__ = (UniqueConstraint("name", "user_id", "type"),)
 
 
 class EntryTagModel(base):
