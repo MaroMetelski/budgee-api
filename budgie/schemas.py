@@ -1,7 +1,8 @@
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 
 
 ACCOUNT_TYPES = ("expense", "income", "equity", "asset", "liability")
+ASSET_SUBTYPES = ("receivable", "monetary")
 
 
 class UserSchema(Schema):
@@ -20,7 +21,19 @@ class AccountSchema(Schema):
     id = fields.UUID()
     name = fields.Str(required=True)
     type = fields.Str(required=True, validate=validate.OneOf(ACCOUNT_TYPES))
+    extra_type = fields.Str(load_default="", dump_default="")
     description = fields.Str(load_default="", dump_default="")
+
+    @validates_schema
+    def asset_extra_types(self, data, **kwargs):
+        if data["type"] == "asset":
+            if (
+                data.get("extra_type", None)
+                and data["extra_type"] not in ASSET_SUBTYPES
+            ):
+                raise ValidationError(
+                    f"Invalid extra_type ({data['extra_type']}) for 'asset'"
+                )
 
 
 class EntrySchema(Schema):

@@ -35,6 +35,7 @@ class AccountModel(base):
     name = Column(String)
     description = Column(String)
     type = Column(String)
+    extra_type = Column(String)
     credit_entries = relationship(
         "EntryModel", primaryjoin="EntryModel.credit_account_id == AccountModel.id"
     )
@@ -103,6 +104,7 @@ class Database:
                 name=account["name"],
                 description=account["description"],
                 type=account["type"],
+                extra_type=account["extra_type"],
             )
             session.add(acc)
             session.commit()
@@ -259,6 +261,7 @@ class Database:
                             "name": account.name,
                             "description": account.description,
                             "type": account.type,
+                            "extra_type": account.extra_type,
                         }
                     )
                 )
