@@ -11,7 +11,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy.sql import func
 import uuid
 
 from .schemas import AccountSchema, EntrySchema, UserSchema
@@ -264,22 +263,3 @@ class Database:
                     )
                 )
             return acc_list
-
-    def get_account_balance(self, account):
-        with sessionmaker(self.db).begin() as session:
-            sum_cr = (
-                session.query(func.sum(EntryModel.amount))
-                .filter_by(user_id=self.current_uid)
-                .filter(EntryModel.credit_account.has(name=account))
-                .scalar()
-            )
-            sum_dr = (
-                session.query(func.sum(EntryModel.amount))
-                .filter_by(user_id=self.current_uid)
-                .filter(EntryModel.debit_account.has(name=account))
-                .scalar()
-            )
-            sum_dr = 0 if not sum_dr else sum_dr
-            sum_cr = 0 if not sum_cr else sum_cr
-
-            return sum_dr - sum_cr
