@@ -76,7 +76,8 @@ def entries():
         return json_response(entries)
     if request.method == "POST":
         entry = EntrySchema().load(request.get_json())
-        backend.add_entry(entry)
+        if not backend.add_entry(entry):
+            return abort(404)
         return json_response(EntrySchema().dumps(entry))
 
 

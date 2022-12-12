@@ -9,6 +9,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import uuid
@@ -104,8 +105,12 @@ class Database:
                 description=account["description"],
                 type=account["type"],
             )
-            session.add(acc)
-            session.commit()
+            try:
+                session.add(acc)
+                session.commit()
+                return True
+            except IntegrityError:
+                return False
 
     def create_tag(self, tag: str):
         with sessionmaker(self.db).begin() as session:
@@ -113,8 +118,12 @@ class Database:
                 user_id=self.current_uid,
                 tag=tag,
             )
-            session.add(tag)
-            session.commit()
+            try:
+                session.add(tag)
+                session.commit()
+                return True
+            except IntegrityError:
+                return False
 
     def create_user(self, user):
         with sessionmaker(self.db).begin() as session:
@@ -125,8 +134,12 @@ class Database:
                 salt=user["salt"],
                 created=user["created"],
             )
-            session.add(user_m)
-            session.commit()
+            try:
+                session.add(user_m)
+                session.commit()
+                return True
+            except IntegrityError:
+                return False
 
     def get_user(self, email):
         with sessionmaker(self.db).begin() as session:
@@ -165,6 +178,9 @@ class Database:
                 .filter_by(name=entry["credit_account"])
                 .first()
             )
+            if not credit_account or not debit_account:
+                return False
+
             entry_m.credit_account = credit_account
             entry_m.debit_account = debit_account
 
@@ -180,6 +196,7 @@ class Database:
                     entry_m.tags.append(entry_tag)
 
             session.add(entry_m)
+            return True
 
     def delete_entry(self, entry_id):
         with sessionmaker(self.db).begin() as session:
