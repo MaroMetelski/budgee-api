@@ -101,6 +101,7 @@ def register():
     user["created"] = date.today().isoformat()
     user = UserSchema().load(user)
     backend.create_user(user)
+    # TODO: Add proper response if user exists or not
     return ""
 
 
@@ -110,8 +111,8 @@ def login():
     email = request.authorization.username
 
     user = backend.get_user(email)
-    if not bcrypt.checkpw(password.encode(), user["password"].encode()):
-        abort(401)
+    if not user or not bcrypt.checkpw(password.encode(), user["password"].encode()):
+        return json_response(json.dumps({"token": None}))
 
     expiry_time = datetime.utcnow() + timedelta(minutes=30)
     token = jwt.encode(
