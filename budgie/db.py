@@ -244,11 +244,15 @@ class Database:
         List accounts from database
         To filter the accounts use following keyword arguments
             - type [string] - show accounts of that type
+            - name [string] - show accounts with specific name
         """
         type_ = kwargs.get("type", None)
+        name = kwargs.get("name", None)
         filter_by = {}
         if type_:
             filter_by["type"] = type_
+        if name:
+            filter_by["name"] = name
 
         with sessionmaker(self.db).begin() as session:
             accounts = session.query(AccountModel).filter_by(
