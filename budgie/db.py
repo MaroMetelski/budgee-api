@@ -111,19 +111,6 @@ class Database:
             except IntegrityError:
                 return False
 
-    def create_tag(self, tag: str):
-        with sessionmaker(self.db).begin() as session:
-            tag = TagModel(
-                user_id=self.current_uid,
-                tag=tag,
-            )
-            try:
-                session.add(tag)
-                session.commit()
-                return True
-            except IntegrityError:
-                return False
-
     def create_user(self, user):
         with sessionmaker(self.db).begin() as session:
             user_m = UserModel(
