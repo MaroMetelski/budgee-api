@@ -59,8 +59,11 @@ def index():
 @app.route("/account", methods=["GET", "POST"])
 @auth_required
 def account():
+    args = request.args.to_dict()
     if request.method == "GET":
-        return json_response(AccountSchema(many=True).dumps(backend.list_accounts()))
+        return json_response(
+            AccountSchema(many=True).dumps(backend.list_accounts(**args))
+        )
     if request.method == "POST":
         acc = AccountSchema().load(request.get_json())
         backend.create_account(acc)
