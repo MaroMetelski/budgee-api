@@ -83,6 +83,21 @@ class EntryModel(base):
     amount = Column(Numeric)
     description = Column(String)
     tags = relationship("EntryTagModel", back_populates="entry")
+    recurrence = relationship("EntryRecurrenceModel", back_populates="entry")
+    reccurence_id = Column(UUID(as_uuid=True), ForeignKey(AccountModel.id))
+    reccurence = relationship("EntryRecurrenceModel", back_populates="entries")
+
+
+class EntryRecurrenceModel(base):
+    """
+    Different instances of 'same' reccurent entry will reference this model on
+    many-to-one basis.
+    """
+
+    __table_name__ = "entry_recurrence"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("app_user.id"))
+    entries = relationship("EntryModel", back_populates="reccurence")
 
 
 class Database:
