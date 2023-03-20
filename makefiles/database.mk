@@ -1,5 +1,5 @@
-DB ?= budgie
-DB_CONTAINER ?= budgie_db
+DB ?= budgee
+DB_CONTAINER ?= budgee_db
 DB_USER ?= postgres
 DOCKER ?= docker
 

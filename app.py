@@ -10,8 +10,8 @@ from flask import Flask, request, abort
 from flask_cors import CORS
 import jwt
 
-from budgie.db import Database
-from budgie.schemas import AccountSchema, EntrySchema, UserSchema
+from budgee.db import Database
+from budgee.schemas import AccountSchema, EntrySchema, UserSchema
 
 
 app = Flask(__name__)
