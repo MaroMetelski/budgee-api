@@ -1,7 +1,7 @@
 from marshmallow import Schema, fields, validate
 
 
-ACCOUNT_TYPES = ("expense", "income", "equity", "asset", "liability")
+ACCOUNT_TYPES = ("expense", "income", "equity", "asset", "liability", "receivable")
 
 
 class UserSchema(Schema):
