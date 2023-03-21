@@ -1,17 +1,19 @@
+from datetime import date
+
 from sqlalchemy import (
     create_engine,
     String,
     Column,
-    Integer,
     Date,
     Numeric,
     ForeignKey,
     UniqueConstraint,
+    Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy.sql import func
 import uuid
 
 from .schemas import AccountSchema, EntrySchema, UserSchema
@@ -42,7 +44,7 @@ class AccountModel(base):
     debit_entries = relationship(
         "EntryModel", primaryjoin="EntryModel.debit_account_id == AccountModel.id"
     )
-    __table_args__ = (UniqueConstraint("name", "user_id"),)
+    __table_args__ = (UniqueConstraint("name", "user_id", "type"),)
 
 
 class EntryTagModel(base):
@@ -84,6 +86,7 @@ class EntryModel(base):
     amount = Column(Numeric)
     description = Column(String)
     tags = relationship("EntryTagModel", back_populates="entry")
+    template = Column(Boolean)
 
 
 class Database:
@@ -105,17 +108,12 @@ class Database:
                 description=account["description"],
                 type=account["type"],
             )
-            session.add(acc)
-            session.commit()
-
-    def create_tag(self, tag: str):
-        with sessionmaker(self.db).begin() as session:
-            tag = TagModel(
-                user_id=self.current_uid,
-                tag=tag,
-            )
-            session.add(tag)
-            session.commit()
+            try:
+                session.add(acc)
+                session.commit()
+                return True
+            except IntegrityError:
+                return False
 
     def create_user(self, user):
         with sessionmaker(self.db).begin() as session:
@@ -126,8 +124,12 @@ class Database:
                 salt=user["salt"],
                 created=user["created"],
             )
-            session.add(user_m)
-            session.commit()
+            try:
+                session.add(user_m)
+                session.commit()
+                return True
+            except IntegrityError:
+                return False
 
     def get_user(self, email):
         with sessionmaker(self.db).begin() as session:
@@ -166,6 +168,9 @@ class Database:
                 .filter_by(name=entry["credit_account"])
                 .first()
             )
+            if not credit_account or not debit_account:
+                return False
+
             entry_m.credit_account = credit_account
             entry_m.debit_account = debit_account
 
@@ -181,6 +186,7 @@ class Database:
                     entry_m.tags.append(entry_tag)
 
             session.add(entry_m)
+            return True
 
     def delete_entry(self, entry_id):
         with sessionmaker(self.db).begin() as session:
@@ -201,12 +207,16 @@ class Database:
     def list_entries(self, **kwargs):
         """
         List entries from database
-        To filter the entries use following keywork arguments
-            - debit_account=<name> - show entries debiting this account
-            - credit_account=<name> - show entries crediting this account
+        To filter the entries use following keyword arguments
+            - debit_account=<string> - show entries debiting this account
+            - credit_account=<string> - show entries crediting this account
+            - from=<yyyy-mm-dd> - show entries from this date
+            - to=<yyyy-mm-dd> - show entries to this date
         """
         dr = kwargs.get("debit_account", None)
         cr = kwargs.get("credit_account", None)
+        _from = kwargs.get("from", None)
+        to = kwargs.get("to", None)
 
         with sessionmaker(self.db).begin() as session:
             entries = session.query(EntryModel).filter_by(user_id=self.current_uid)
@@ -214,6 +224,12 @@ class Database:
                 entries = entries.filter(EntryModel.debit_account.has(name=dr))
             if cr:
                 entries = entries.filter(EntryModel.credit_account.has(name=cr))
+            if _from:
+                _from = date.fromisoformat(_from)
+                entries = entries.filter(EntryModel.when >= _from)
+            if to:
+                to = date.fromisoformat(to)
+                entries = entries.filter(EntryModel.when <= to)
 
             entry_list = []
             for entry in entries:
@@ -240,11 +256,15 @@ class Database:
         List accounts from database
         To filter the accounts use following keyword arguments
             - type [string] - show accounts of that type
+            - name [string] - show accounts with specific name
         """
         type_ = kwargs.get("type", None)
+        name = kwargs.get("name", None)
         filter_by = {}
         if type_:
             filter_by["type"] = type_
+        if name:
+            filter_by["name"] = name
 
         with sessionmaker(self.db).begin() as session:
             accounts = session.query(AccountModel).filter_by(
@@ -264,22 +284,3 @@ class Database:
                     )
                 )
             return acc_list
-
-    def get_account_balance(self, account):
-        with sessionmaker(self.db).begin() as session:
-            sum_cr = (
-                session.query(func.sum(EntryModel.amount))
-                .filter_by(user_id=self.current_uid)
-                .filter(EntryModel.credit_account.has(name=account))
-                .scalar()
-            )
-            sum_dr = (
-                session.query(func.sum(EntryModel.amount))
-                .filter_by(user_id=self.current_uid)
-                .filter(EntryModel.debit_account.has(name=account))
-                .scalar()
-            )
-            sum_dr = 0 if not sum_dr else sum_dr
-            sum_cr = 0 if not sum_cr else sum_cr
-
-            return sum_dr - sum_cr

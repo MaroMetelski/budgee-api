@@ -10,15 +10,19 @@ from flask import Flask, request, abort
 from flask_cors import CORS
 import jwt
 
-from budgie.db import Database
-from budgie.schemas import AccountSchema, EntrySchema, UserSchema
+from budgee.db import Database
+from budgee.schemas import AccountSchema, EntrySchema, UserSchema
 
 
 app = Flask(__name__)
 secret = secrets.token_hex()
 CORS(app, supports_credentials=True)
 
-load_dotenv()
+if (app.debug):
+    load_dotenv(".env.test")
+else:
+    load_dotenv()
+
 DB_USER = os.environ["BUDGIE_DB_USER"]
 DB_PASSWORD = os.environ["BUDGIE_DB_PASSWORD"]
 DB_HOST = os.environ["BUDGIE_DB_HOST"]
@@ -59,20 +63,15 @@ def index():
 @app.route("/account", methods=["GET", "POST"])
 @auth_required
 def account():
+    args = request.args.to_dict()
     if request.method == "GET":
-        return json_response(AccountSchema(many=True).dumps(backend.list_accounts()))
+        return json_response(
+            AccountSchema(many=True).dumps(backend.list_accounts(**args))
+        )
     if request.method == "POST":
         acc = AccountSchema().load(request.get_json())
         backend.create_account(acc)
         return json_response(AccountSchema().dumps(acc))
-
-
-@app.route("/account/balance/<string:account>", methods=["GET"])
-@auth_required
-def account_balance(account):
-    if request.method == "GET":
-        balance = backend.get_account_balance(account)
-        return {"balance": balance}
 
 
 @app.route("/entry", methods=["GET", "POST"])
@@ -84,7 +83,8 @@ def entries():
         return json_response(entries)
     if request.method == "POST":
         entry = EntrySchema().load(request.get_json())
-        backend.add_entry(entry)
+        if not backend.add_entry(entry):
+            return abort(404)
         return json_response(EntrySchema().dumps(entry))
 
 
@@ -108,6 +108,7 @@ def register():
     user["created"] = date.today().isoformat()
     user = UserSchema().load(user)
     backend.create_user(user)
+    # TODO: Add proper response if user exists or not
     return ""
 
 
@@ -117,8 +118,8 @@ def login():
     email = request.authorization.username
 
     user = backend.get_user(email)
-    if not bcrypt.checkpw(password.encode(), user["password"].encode()):
-        abort(401)
+    if not user or not bcrypt.checkpw(password.encode(), user["password"].encode()):
+        return json_response(json.dumps({"token": None}))
 
     expiry_time = datetime.utcnow() + timedelta(minutes=30)
     token = jwt.encode(
