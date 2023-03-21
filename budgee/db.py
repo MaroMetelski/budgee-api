@@ -6,6 +6,7 @@ from sqlalchemy import (
     Numeric,
     ForeignKey,
     UniqueConstraint,
+    Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.exc import IntegrityError
@@ -83,6 +84,7 @@ class EntryModel(base):
     amount = Column(Numeric)
     description = Column(String)
     tags = relationship("EntryTagModel", back_populates="entry")
+    template = Column(Boolean)
 
 
 class Database:

@@ -35,3 +35,4 @@ class EntrySchema(Schema):
     who = fields.Str(load_default="", dump_default="")
     description = fields.Str(load_default="", dump_default="")
     tags = fields.List(fields.Str)
+    template = fields.Bool(load_default=False, dump_default=False)
