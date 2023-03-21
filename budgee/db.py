@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy import (
     create_engine,
     String,
@@ -205,12 +207,16 @@ class Database:
     def list_entries(self, **kwargs):
         """
         List entries from database
-        To filter the entries use following keywork arguments
-            - debit_account=<name> - show entries debiting this account
-            - credit_account=<name> - show entries crediting this account
+        To filter the entries use following keyword arguments
+            - debit_account=<string> - show entries debiting this account
+            - credit_account=<string> - show entries crediting this account
+            - from=<yyyy-mm-dd> - show entries from this date
+            - to=<yyyy-mm-dd> - show entries to this date
         """
         dr = kwargs.get("debit_account", None)
         cr = kwargs.get("credit_account", None)
+        _from = kwargs.get("from", None)
+        to = kwargs.get("to", None)
 
         with sessionmaker(self.db).begin() as session:
             entries = session.query(EntryModel).filter_by(user_id=self.current_uid)
@@ -218,6 +224,12 @@ class Database:
                 entries = entries.filter(EntryModel.debit_account.has(name=dr))
             if cr:
                 entries = entries.filter(EntryModel.credit_account.has(name=cr))
+            if _from:
+                _from = date.fromisoformat(_from)
+                entries = entries.filter(EntryModel.when >= _from)
+            if to:
+                to = date.fromisoformat(to)
+                entries = entries.filter(EntryModel.when <= to)
 
             entry_list = []
             for entry in entries:
