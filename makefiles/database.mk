@@ -6,4 +6,7 @@ DOCKER ?= docker
 psql:
 	$(DOCKER) exec -it $(DB_CONTAINER) psql -U $(DB_USER) $(DB)
 
-.PHONY: psql
+psql-dev:
+	make psql DB=budgee_dev
+
+.PHONY: psql psql-dev
