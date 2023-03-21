@@ -247,6 +247,7 @@ class Database:
                             # entry.tags are EntryTag associations
                             # Maybe association_proxy could be used?
                             "tags": [entry_tag.tag.tag for entry_tag in entry.tags],
+                            "template": entry.template,
                         }
                     )
                 )
