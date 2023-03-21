@@ -18,7 +18,11 @@ app = Flask(__name__)
 secret = secrets.token_hex()
 CORS(app, supports_credentials=True)
 
-load_dotenv()
+if (app.debug):
+    load_dotenv(".env.test")
+else:
+    load_dotenv()
+
 DB_USER = os.environ["BUDGIE_DB_USER"]
 DB_PASSWORD = os.environ["BUDGIE_DB_PASSWORD"]
 DB_HOST = os.environ["BUDGIE_DB_HOST"]
