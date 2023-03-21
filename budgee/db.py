@@ -157,6 +157,7 @@ class Database:
                 when=entry["when"],
                 amount=entry["amount"],
                 description=entry["description"],
+                template=entry["template"],
             )
             debit_account = (
                 session.query(AccountModel)
