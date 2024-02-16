@@ -32,7 +32,6 @@ class EntrySchema(Schema):
     credit_account = fields.Str(required=True)
     debit_account = fields.Str(required=True)
     amount = fields.Decimal(places=2, required=True, as_string=True)
-    who = fields.Str(load_default="", dump_default="")
     description = fields.Str(load_default="", dump_default="")
     tags = fields.List(fields.Str)
     template = fields.Bool(load_default=False, dump_default=False)

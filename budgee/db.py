@@ -71,7 +71,6 @@ class EntryModel(base):
     __tablename__ = "entry"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("app_user.id"))
-    who = Column(String)
     when = Column(Date)
     credit_account_id = Column(UUID(as_uuid=True), ForeignKey(AccountModel.id))
     credit_account = relationship(
@@ -243,7 +242,6 @@ class Database:
                             "credit_account": entry.credit_account.name,
                             "debit_account": entry.debit_account.name,
                             "amount": entry.amount,
-                            "who": entry.who,
                             # entry.tags are EntryTag associations
                             # Maybe association_proxy could be used?
                             "tags": [entry_tag.tag.tag for entry_tag in entry.tags],
