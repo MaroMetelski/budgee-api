@@ -1,10 +1,11 @@
 # Budgee API
 
-REST API for double-entry budgeting operations.
+REST API for budgeting operations based on double-entry bookkeeping principles.
 
 Disclaimer:\
 Project is in early development stage. Any change may be a breaking change.
 This is indicated by 0.x.x version. Any production ready code will start with 1.x.x.
+
 
 ## Development
 
