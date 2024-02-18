@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 import uuid
 
 from .schemas import AccountSchema, EntrySchema, UserSchema
+from .storage import Storage
 
 base = declarative_base()
 
@@ -88,7 +89,9 @@ class EntryModel(base):
     template = Column(Boolean)
 
 
-class Database:
+class DatabaseStorage(Storage):
+    """Database implementation of application data storage."""
+
     def __init__(self, db_string):
         self.db = create_engine(db_string, echo=True)
         base.metadata.create_all(self.db)
